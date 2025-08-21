@@ -1,0 +1,122 @@
+/* Reset ringkas */
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+  background: #0b1220;            /* Dark background */
+  color: #e5e7eb;                 /* Text */
+}
+
+/* Theme tokens */
+:root{
+  --bg: #0b1220;
+  --card: #0f172a;
+  --text: #e5e7eb;
+  --muted: #94a3b8;
+  --border: #1f2937;
+  --primary: #0f1050;     /* ORANGE khas BPBD */
+  --primary-600:#090624;
+  --ring: rgba(249,115,22,.35);
+  --shadow: 0 10px 20px rgba(0,0,0,.35);
+  --radius: 16px;
+}
+
+/* Layout */
+.container{
+  max-width: 760px;
+  margin: 32px auto 64px;
+  padding: 0 20px;
+}
+.header{
+  background: var(--primary);
+  color: #fff;
+  padding: 24px 28px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.header img{
+  height: 48px; /* ukuran logo */
+  width: auto;
+}
+.header h1{
+  margin: 0 0 6px;
+  font-size: 24px;
+  font-weight: 800;
+}
+.header p{
+  margin: 0;
+  opacity: .9;
+  font-size: 14px;
+}
+
+/* Progress */
+.progress{
+  height: 6px;
+  background: #1f2937;
+  border-left: 1px solid #0000;
+  border-right: 1px solid #0000;
+}
+.progress__bar{
+  height: 100%;
+  background: #fb923c;  /* lebih terang dari header */
+  transition: width .35s ease;
+}
+
+/* Card + form */
+.card{
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+
+.form{ display: grid; gap: 18px; }
+
+.form-group label{
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+input, select, textarea{
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #0b1328;
+  color: var(--text);
+  outline: none;
+  transition: border-color .2s, box-shadow .2s, background .2s;
+}
+textarea{ resize: vertical; min-height: 110px; }
+
+input::placeholder, textarea::placeholder{ color: var(--muted); }
+
+input:focus, select:focus, textarea:focus{
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--ring);
+  background: #0e1631;
+}
+
+/* Button */
+.btn-primary{
+  width: 100%;
+  padding: 14px 16px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--primary);
+  cursor: pointer;
+  transition: transform .05s ease, background .2s ease, box-shadow .2s ease;
+  box-shadow: 0 8px 18px rgba(249,115,22,.28);
+}
+.btn-primary:hover{ background: var(--primary-600); }
+.btn-primary:active{ transform: translateY(1px); }
