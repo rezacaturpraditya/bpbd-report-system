@@ -76,14 +76,17 @@ const handleSubmit = async (e) => {
   } else {
     // Format pesan WA sesuai permintaan
     const pesan = `*Laporan Kejadian di wilayah Lampung Selatan*%0A
-📝 Judul: ${newData.judul}%0A
+🗒️ Judul: ${newData.judul}%0A
 📍 Lokasi: ${newData.lokasi}%0A
-📅 Tanggal: ${newData.tanggal}%0A
-👤 Pelapor: ${newData.pelapor}%0A
+🗓️ Tanggal: ${newData.tanggal}%0A
+🤵 Pelapor: ${newData.pelapor}%0A
 📞 Kontak: ${newData.kontak}%0A
-📖 Kronologis:%0A${newData.kronologis}%0A
+📝 Kronologis:%0A${newData.kronologis}%0A
+
 Foto 1: ${newData.fotoUrl1}%0A
+
 Foto 2: ${newData.fotoUrl2}%0A
+
 Foto 3: ${newData.fotoUrl3}`;
 
     // kirim WA ke nomor yang dipilih
