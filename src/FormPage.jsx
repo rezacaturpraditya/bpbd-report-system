@@ -9,76 +9,117 @@ function FormPage() {
     lokasi: "",
     pelapor: "",
     kontak: "",
-    waTujuan: "", // ✅ nomor WA tujuan
+    waTujuan: "",
+    fotoUrl1: "",
+    fotoUrl2: "",
+    fotoUrl3: "",
   });
+
+  const [fotoFiles, setFotoFiles] = useState({ foto1: null, foto2: null, foto3: null });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleFileChange = (e, key) => {
+    setFotoFiles({ ...fotoFiles, [key]: e.target.files[0] });
+  };
 
-  // Validasi input
-  for (const [key, value] of Object.entries(formData)) {
-    if (!value.trim()) {
-      alert(`Kolom "${key}" wajib diisi!`);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Validasi input teks
+    for (const [key, value] of Object.entries(formData)) {
+      if (!key.startsWith("fotoUrl") && !value.trim()) {
+        alert(`Kolom "${key}" wajib diisi!`);
+        return;
+      }
+    }
+
+    // Upload minimal 3 foto
+    const uploadFoto = async (file, key) => {
+      if (!file) return "";
+      const fileName = `${Date.now()}_${key}_${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("laporan-foto")
+        .upload(fileName, file);
+
+      if (uploadError) {
+        alert("Upload foto gagal: " + uploadError.message);
+        return "";
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from("laporan-foto")
+        .getPublicUrl(fileName);
+
+      return publicUrlData.publicUrl;
+    };
+
+    const fotoUrl1 = await uploadFoto(fotoFiles.foto1, "foto1");
+    const fotoUrl2 = await uploadFoto(fotoFiles.foto2, "foto2");
+    const fotoUrl3 = await uploadFoto(fotoFiles.foto3, "foto3");
+
+    if (!fotoUrl1 || !fotoUrl2 || !fotoUrl3) {
+      alert("Semua 3 foto wajib diupload!");
       return;
     }
-  }
 
-  // Simpan laporan ke Supabase
-  const { error } = await supabase.from("laporan").insert([formData]);
+    const newData = { ...formData, fotoUrl1, fotoUrl2, fotoUrl3 };
 
-  if (error) {
-    alert("Gagal kirim laporan: " + error.message);
-  } else {
-    // Format pesan
-    const pesan = `*Laporan Baru*%0A
-📝 Judul: ${formData.judul}%0A
-📍 Lokasi: ${formData.lokasi}%0A
-📅 Tanggal: ${formData.tanggal}%0A
-👤 Pelapor: ${formData.pelapor}%0A
-📞 Kontak: ${formData.kontak}%0A
-📖 Kronologis:%0A${formData.kronologis}`;
+    // Simpan laporan ke Supabase
+    const { error } = await supabase.from("laporan").insert([newData]);
 
-    // Nomor yang dipilih user di dropdown
-    if (formData.waTujuan) {
-      window.open(`https://wa.me/${formData.waTujuan}?text=${pesan}`, "_blank");
+    if (error) {
+      alert("Gagal kirim laporan: " + error.message);
+    } else {
+      // Format pesan WA
+      const pesan = `*Laporan Baru*%0A
+📝 Judul: ${newData.judul}%0A
+📍 Lokasi: ${newData.lokasi}%0A
+📅 Tanggal: ${newData.tanggal}%0A
+👤 Pelapor: ${newData.pelapor}%0A
+📞 Kontak: ${newData.kontak}%0A
+📖 Kronologis:%0A${newData.kronologis}
+%0AFoto 1: ${newData.fotoUrl1}
+%0AFoto 2: ${newData.fotoUrl2}
+%0AFoto 3: ${newData.fotoUrl3}`;
+
+      // kirim WA ke nomor yang dipilih
+      if (newData.waTujuan) {
+        window.open(`https://wa.me/${newData.waTujuan}?text=${pesan}`, "_blank");
+      }
+
+      // broadcast ke 3 nomor tetap
+      const nomorList = ["6281279013197", "6285874132088", "6287883035832"];
+      nomorList.forEach((nomor, index) => {
+        setTimeout(() => {
+          window.open(`https://wa.me/${nomor}?text=${pesan}`, "_blank");
+        }, index * 1500);
+      });
+
+      alert("Laporan berhasil dikirim ke Supabase dan WhatsApp!");
+      setFormData({
+        judul: "",
+        kronologis: "",
+        tanggal: "",
+        lokasi: "",
+        pelapor: "",
+        kontak: "",
+        waTujuan: "",
+        fotoUrl1: "",
+        fotoUrl2: "",
+        fotoUrl3: "",
+      });
+      setFotoFiles({ foto1: null, foto2: null, foto3: null });
     }
-
-    // Nomor broadcast tetap terkirim (otomatis 3 nomor)
-const nomorList = [
-      "6281279013197", // Nomor 1
-      "6285874132088", // Nomor 2
-      "6287883035832", // Nomor 3
-];
-
-nomorList.forEach((nomor, index) => {
-  setTimeout(() => {
-    window.open(`https://wa.me/${nomor}?text=${pesan}`, "_blank");
-  }, index * 1500); // jeda 1.5 detik antar pesan
-});
-
-    alert("Laporan berhasil dikirim ke Supabase dan WhatsApp!");
-    setFormData({
-      judul: "",
-      kronologis: "",
-      tanggal: "",
-      lokasi: "",
-      pelapor: "",
-      kontak: "",
-      waTujuan: "",
-    });
-  }
-};
-
-
-
+  };
 
   const divider = (
-    <hr style={{ border: "0", borderTop: "1px solid #fd912cff", margin: "20px 0" }} />
+    <hr
+      style={{ border: "0", borderTop: "1px solid #fd912cff", margin: "20px 0" }}
+    />
   );
 
   return (
@@ -94,11 +135,7 @@ nomorList.forEach((nomor, index) => {
           boxShadow: "0 4px 10px rgba(0,0,0,0.3)",
         }}
       >
-        <img
-          src="/navbar.webp"
-          alt="Logo BPBD"
-          style={{ width: "130px", marginBottom: "10px" }}
-        />
+        <img src="/navbar.webp" alt="Logo BPBD" style={{ width: "130px", marginBottom: "10px" }} />
         <h1 style={{ margin: 0, fontSize: "22px" }}>
           Pusat Pengendalian Operasi - PB BPBD Kabupaten Lampung Selatan
         </h1>
@@ -116,7 +153,7 @@ nomorList.forEach((nomor, index) => {
           boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
         }}
       >
-        {/* Judul Kejadian */}
+        {/* Judul */}
         <div style={{ marginBottom: "20px" }}>
           <h3 style={{ marginBottom: "8px", color: "#333" }}>Judul Kejadian</h3>
           <select
@@ -124,20 +161,13 @@ nomorList.forEach((nomor, index) => {
             value={formData.judul}
             onChange={handleChange}
             required
-            style={{
-              width: "100%",
-              padding: "10px",
-              borderRadius: "5px",
-              border: "1px solid #ccc",
-            }}
+            style={{ width: "100%", padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
           >
             <option value="">-- Pilih Kejadian --</option>
             <option value="angin kencang">Angin Kencang</option>
             <option value="angin putting beliung">Angin Puting Beliung</option>
             <option value="banjir">Banjir</option>
-            <option value="hujan deras disertai angin kencang">
-              Hujan Deras Disertai Angin Kencang
-            </option>
+            <option value="hujan deras disertai angin kencang">Hujan Deras Disertai Angin Kencang</option>
             <option value="longsor">Longsor</option>
             <option value="sambar petir">Sambar Petir</option>
             <option value="rumah roboh">Rumah Roboh</option>
@@ -157,12 +187,7 @@ nomorList.forEach((nomor, index) => {
             value={formData.kronologis}
             onChange={handleChange}
             required
-            style={{
-              width: "100%",
-              padding: "10px",
-              borderRadius: "5px",
-              border: "1px solid #ccc",
-            }}
+            style={{ width: "100%", padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
             rows="4"
             placeholder="Tuliskan kronologis kejadian secara lengkap..."
           />
@@ -172,21 +197,14 @@ nomorList.forEach((nomor, index) => {
 
         {/* Tanggal */}
         <div style={{ marginBottom: "20px" }}>
-          <h3 style={{ marginBottom: "8px", color: "#333" }}>
-            Tanggal & Waktu Kejadian
-          </h3>
+          <h3 style={{ marginBottom: "8px", color: "#333" }}>Tanggal & Waktu Kejadian</h3>
           <input
             type="datetime-local"
             name="tanggal"
             value={formData.tanggal}
             onChange={handleChange}
             required
-            style={{
-              width: "100%",
-              padding: "10px",
-              borderRadius: "5px",
-              border: "1px solid #ccc",
-            }}
+            style={{ width: "100%", padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
           />
         </div>
 
@@ -194,9 +212,7 @@ nomorList.forEach((nomor, index) => {
 
         {/* Lokasi */}
         <div style={{ marginBottom: "20px" }}>
-          <h3 style={{ marginBottom: "8px", color: "#333" }}>
-            Lokasi & Tempat Kejadian
-          </h3>
+          <h3 style={{ marginBottom: "8px", color: "#333" }}>Lokasi & Tempat Kejadian</h3>
           <input
             type="text"
             name="lokasi"
@@ -204,12 +220,7 @@ nomorList.forEach((nomor, index) => {
             onChange={handleChange}
             placeholder="Contoh: Desa Sukamaju, RT 02 RW 03"
             required
-            style={{
-              width: "100%",
-              padding: "10px",
-              borderRadius: "5px",
-              border: "1px solid #ccc",
-            }}
+            style={{ width: "100%", padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
           />
         </div>
 
@@ -225,12 +236,7 @@ nomorList.forEach((nomor, index) => {
             onChange={handleChange}
             placeholder="Nama lengkap pelapor"
             required
-            style={{
-              width: "100%",
-              padding: "10px",
-              borderRadius: "5px",
-              border: "1px solid #ccc",
-            }}
+            style={{ width: "100%", padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
           />
         </div>
 
@@ -238,9 +244,7 @@ nomorList.forEach((nomor, index) => {
 
         {/* Kontak */}
         <div style={{ marginBottom: "20px" }}>
-          <h3 style={{ marginBottom: "8px", color: "#333" }}>
-            Nomor Telepon Pelapor
-          </h3>
+          <h3 style={{ marginBottom: "8px", color: "#333" }}>Nomor Telepon Pelapor</h3>
           <input
             type="tel"
             name="kontak"
@@ -248,12 +252,7 @@ nomorList.forEach((nomor, index) => {
             onChange={handleChange}
             placeholder="08xxxxxxxxxx"
             required
-            style={{
-              width: "100%",
-              padding: "10px",
-              borderRadius: "5px",
-              border: "1px solid #ccc",
-            }}
+            style={{ width: "100%", padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
           />
         </div>
 
@@ -267,18 +266,25 @@ nomorList.forEach((nomor, index) => {
             value={formData.waTujuan}
             onChange={handleChange}
             required
-            style={{
-              width: "100%",
-              padding: "10px",
-              borderRadius: "5px",
-              border: "1px solid #ccc",
-            }}
+            style={{ width: "100%", padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
           >
             <option value="">-- Pilih Nomor WA --</option>
             <option value="6281279013197">Posko BPBD (0812-7901-3197)</option>
             <option value="6281279013197">Kepala BPBD (0812-7901-3197)</option>
             <option value="6281279013197">Nomor Darurat (0812-7901-3197)</option>
           </select>
+        </div>
+
+        {divider}
+
+        {/* Upload Foto */}
+        <div style={{ marginBottom: "20px" }}>
+          <h3 style={{ marginBottom: "8px", color: "#333" }}>Upload Foto (Minimal 3)</h3>
+          <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, "foto1")} required />
+          <br /><br />
+          <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, "foto2")} required />
+          <br /><br />
+          <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, "foto3")} required />
         </div>
 
         {divider}
