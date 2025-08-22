@@ -95,7 +95,7 @@ Foto 3: ${newData.fotoUrl3}`;
     }
 
     // broadcast ke 3 nomor tetap
-    const nomorList = ["6281279013197", "6285874132088", "6287883035832"];
+    const nomorList = ["6281279013197", "6281279013197", "6281279013197"];
     nomorList.forEach((nomor, index) => {
       setTimeout(() => {
         window.open(`https://wa.me/${nomor}?text=${pesan}`, "_blank");
