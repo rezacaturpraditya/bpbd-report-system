@@ -26,95 +26,95 @@ function FormPage() {
     setFotoFiles({ ...fotoFiles, [key]: e.target.files[0] });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    // Validasi input teks
-    for (const [key, value] of Object.entries(formData)) {
-      if (!key.startsWith("fotoUrl") && !value.trim()) {
-        alert(`Kolom "${key}" wajib diisi!`);
-        return;
-      }
-    }
-
-    // Upload minimal 3 foto
-    const uploadFoto = async (file, key) => {
-      if (!file) return "";
-      const fileName = `${Date.now()}_${key}_${file.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from("laporan-foto")
-        .upload(fileName, file);
-
-      if (uploadError) {
-        alert("Upload foto gagal: " + uploadError.message);
-        return "";
-      }
-
-      const { data: publicUrlData } = supabase.storage
-        .from("laporan-foto")
-        .getPublicUrl(fileName);
-
-      return publicUrlData.publicUrl;
-    };
-
-    const fotoUrl1 = await uploadFoto(fotoFiles.foto1, "foto1");
-    const fotoUrl2 = await uploadFoto(fotoFiles.foto2, "foto2");
-    const fotoUrl3 = await uploadFoto(fotoFiles.foto3, "foto3");
-
-    if (!fotoUrl1 || !fotoUrl2 || !fotoUrl3) {
-      alert("Semua 3 foto wajib diupload!");
+  // Validasi input teks
+  for (const [key, value] of Object.entries(formData)) {
+    if (!key.startsWith("fotoUrl") && !value.trim()) {
+      alert(`Kolom "${key}" wajib diisi!`);
       return;
     }
+  }
 
-    const newData = { ...formData, fotoUrl1, fotoUrl2, fotoUrl3 };
+  // Upload minimal 3 foto
+  const uploadFoto = async (file, key) => {
+    if (!file) return "";
+    const fileName = `${Date.now()}_${key}_${file.name}`;
+    const { error: uploadError } = await supabase.storage
+      .from("laporan-foto")
+      .upload(fileName, file);
 
-    // Simpan laporan ke Supabase
-    const { error } = await supabase.from("laporan").insert([newData]);
+    if (uploadError) {
+      alert("Upload foto gagal: " + uploadError.message);
+      return "";
+    }
 
-    if (error) {
-      alert("Gagal kirim laporan: " + error.message);
-    } else {
-      // Format pesan WA
-      const pesan = `*Laporan Baru*%0A
+    const { data: publicUrlData } = supabase.storage
+      .from("laporan-foto")
+      .getPublicUrl(fileName);
+
+    return publicUrlData.publicUrl;
+  };
+
+  const fotoUrl1 = await uploadFoto(fotoFiles.foto1, "foto1");
+  const fotoUrl2 = await uploadFoto(fotoFiles.foto2, "foto2");
+  const fotoUrl3 = await uploadFoto(fotoFiles.foto3, "foto3");
+
+  if (!fotoUrl1 || !fotoUrl2 || !fotoUrl3) {
+    alert("Semua 3 foto wajib diupload!");
+    return;
+  }
+
+  const newData = { ...formData, fotoUrl1, fotoUrl2, fotoUrl3 };
+
+  // Simpan laporan ke Supabase
+  const { error } = await supabase.from("laporan").insert([newData]);
+
+  if (error) {
+    alert("Gagal kirim laporan: " + error.message);
+  } else {
+    // Format pesan WA sesuai permintaan
+    const pesan = `*Laporan Kejadian di wilayah Lampung Selatan*%0A
 📝 Judul: ${newData.judul}%0A
 📍 Lokasi: ${newData.lokasi}%0A
 📅 Tanggal: ${newData.tanggal}%0A
 👤 Pelapor: ${newData.pelapor}%0A
 📞 Kontak: ${newData.kontak}%0A
-📖 Kronologis:%0A${newData.kronologis}
-%0AFoto 1: ${newData.fotoUrl1}
-%0AFoto 2: ${newData.fotoUrl2}
-%0AFoto 3: ${newData.fotoUrl3}`;
+📖 Kronologis:%0A${newData.kronologis}%0A
+Foto 1: ${newData.fotoUrl1}%0A
+Foto 2: ${newData.fotoUrl2}%0A
+Foto 3: ${newData.fotoUrl3}`;
 
-      // Kirim WA ke nomor yang dipilih
-      if (newData.waTujuan) {
-        window.open(`https://wa.me/${newData.waTujuan}?text=${encodeURIComponent(pesan)}`, "_blank");
-      }
-
-      // Broadcast ke 3 nomor tetap
-      const nomorList = ["6281279013197", "6285874132088", "6287883035832"];
-      nomorList.forEach((nomor, index) => {
-        setTimeout(() => {
-          window.open(`https://wa.me/${nomor}?text=${encodeURIComponent(pesan)}`, "_blank");
-        }, index * 1500);
-      });
-
-      alert("Laporan berhasil dikirim ke Supabase dan WhatsApp!");
-      setFormData({
-        judul: "",
-        kronologis: "",
-        tanggal: "",
-        lokasi: "",
-        pelapor: "",
-        kontak: "",
-        waTujuan: "",
-        fotoUrl1: "",
-        fotoUrl2: "",
-        fotoUrl3: "",
-      });
-      setFotoFiles({ foto1: null, foto2: null, foto3: null });
+    // kirim WA ke nomor yang dipilih
+    if (newData.waTujuan) {
+      window.open(`https://wa.me/${newData.waTujuan}?text=${pesan}`, "_blank");
     }
-  };
+
+    // broadcast ke 3 nomor tetap
+    const nomorList = ["6281279013197", "6285874132088", "6287883035832"];
+    nomorList.forEach((nomor, index) => {
+      setTimeout(() => {
+        window.open(`https://wa.me/${nomor}?text=${pesan}`, "_blank");
+      }, index * 1500);
+    });
+
+    alert("Laporan berhasil dikirim ke Supabase dan WhatsApp!");
+    setFormData({
+      judul: "",
+      kronologis: "",
+      tanggal: "",
+      lokasi: "",
+      pelapor: "",
+      kontak: "",
+      waTujuan: "",
+      fotoUrl1: "",
+      fotoUrl2: "",
+      fotoUrl3: "",
+    });
+    setFotoFiles({ foto1: null, foto2: null, foto3: null });
+  }
+};
 
   const divider = (
     <hr
